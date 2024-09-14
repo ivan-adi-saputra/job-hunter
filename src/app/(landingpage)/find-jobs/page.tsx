@@ -1,9 +1,11 @@
 "use client";
 
 import ExploreDataContainer from "@/containers/ExploreDataContainer";
+import useCategoryJobFilter from "@/hooks/useCategoryJobFilter";
+import useJobs from "@/hooks/useJobs";
 import { formFilterSchema } from "@/lib/form-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -15,18 +17,19 @@ export default function FindJobsPage() {
     },
   });
 
+  const { filters } = useCategoryJobFilter();
   const [categories, setCategories] = useState<string[]>([]);
+  const { jobs, isLoading, mutate } = useJobs(categories);
 
-  const onSubmitFormFilter = async (val: z.infer<typeof formFilterSchema>) => {
+  const onSubmitFormFilter: any = async (
+    val: z.infer<typeof formFilterSchema>
+  ) => {
     setCategories(val.categories);
   };
-  const string: any = [];
-  const filters: any = [
-    {
-      label: "asdad",
-      name: "",
-    },
-  ];
+
+  useEffect(() => {
+    mutate();
+  }, [categories]);
 
   return (
     <ExploreDataContainer
@@ -36,9 +39,9 @@ export default function FindJobsPage() {
       title="dream job"
       subtitle="Find your next career at companies like HubSpot, Nike,
 			and Dropbox"
-      loading={false}
+      loading={isLoading}
       type="job"
-      data={string}
+      data={jobs}
     />
   );
 }
