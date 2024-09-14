@@ -30,7 +30,25 @@ const SignUpPage: FC<SignUpPageProps> = ({}) => {
   const router = useRouter();
 
   const onSubmit = async (val: z.infer<typeof formSignUpSchema>) => {
-    //
+    try {
+      await fetch("/api/user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(val),
+      });
+
+      toast({
+        title: "Success",
+        description: "Create account success",
+      });
+
+      router.push("/signin");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Please try again",
+      });
+    }
   };
 
   return (
