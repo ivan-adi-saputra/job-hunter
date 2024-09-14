@@ -1,6 +1,8 @@
 "use client";
 
 import ExploreDataContainer from "@/containers/ExploreDataContainer";
+import useCategoryCompanyFilter from "@/hooks/useCategoryCompanyFilter";
+import useCompanies from "@/hooks/useCompanies";
 import { formFilterCompanySchema } from "@/lib/form-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FC, useEffect, useState } from "react";
@@ -17,16 +19,17 @@ const FindCompaniesPage: FC<FindCompaniesPageProps> = ({}) => {
     },
   });
 
+  const { filters } = useCategoryCompanyFilter();
   const [categories, setCategories] = useState<string[]>([]);
-
-  const [isLoading, setIsLoading] = useState(true);
-
-  const filters: any = [];
-  const companies: any = [];
+  const { companies, isLoading, mutate } = useCompanies(categories);
 
   const onSubmit = async (val: z.infer<typeof formFilterCompanySchema>) => {
     setCategories(val.industry);
   };
+
+  useEffect(() => {
+    mutate();
+  }, [categories]);
 
   return (
     <ExploreDataContainer
