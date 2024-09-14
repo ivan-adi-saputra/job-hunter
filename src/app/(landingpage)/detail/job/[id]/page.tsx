@@ -7,12 +7,75 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { FC } from "react";
 import { BiCategory } from "react-icons/bi";
+import prisma from "../../../../../../lib/prisma";
+import { supabasePublicUrl } from "@/lib/supabase";
 import { dateFormat } from "@/lib/utils";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-async function getDetailJob(id: string) {}
+async function getDetailJob(id: string) {
+  const session = await getServerSession(authOptions);
+
+  const data = await prisma.job.findFirst({
+    where: {
+      id,
+    },
+    include: {
+      Company: {
+        include: {
+          Companyoverview: true,
+        },
+      },
+      CategoryJob: true,
+    },
+  });
+
+  let imageUrl;
+
+  if (data?.Company?.Companyoverview[0]?.image) {
+    imageUrl = await supabasePublicUrl(
+      data.Company.Companyoverview[0]?.image,
+      "company"
+    );
+  } else {
+    imageUrl = "/images/company2.png";
+  }
+
+  const applicants = data?.applicants || 0;
+  const needs = data?.needs || 0;
+
+  const isApply = await prisma.applicant.count({
+    where: {
+      userId: session?.user.id,
+    },
+  });
+
+  const benefits: any = data?.benefits;
+
+  if (!session) {
+    return {
+      ...data,
+      image: imageUrl,
+      benefits,
+      applicants,
+      needs,
+      isApply: 0,
+    };
+  }
+
+  return {
+    ...data,
+    image: imageUrl,
+    benefits,
+    applicants,
+    needs,
+    isApply,
+  };
+}
+
 const DetailJobPage = async ({ params }: { params: { id: string } }) => {
-  const data: any = [];
-  const session: boolean = false;
+  const data = await getDetailJob(params.id);
+  const session = await getServerSession(authOptions);
 
   return (
     <>
@@ -31,9 +94,9 @@ const DetailJobPage = async ({ params }: { params: { id: string } }) => {
           /{" "}
           <Link
             className="hover:underline hover:text-black"
-            href={`/detail/company/${data?.Company?.Companyoverview[0].id}`}
+            href={`/detail/company/${data?.Company?.Companyoverview[0]?.id}`}
           >
-            {data?.Company?.Companyoverview[0].name}
+            {data?.Company?.Companyoverview[0]?.name}
           </Link>{" "}
           /{" "}
           <Link
@@ -49,7 +112,7 @@ const DetailJobPage = async ({ params }: { params: { id: string } }) => {
             <div>
               <div className="text-2xl font-semibold">{data?.roles}</div>
               <div className="text-muted-foreground">
-                {data?.Company?.Companyoverview[0].location} . {data?.jobType}
+                {data?.Company?.Companyoverview[0]?.location} . {data?.jobType}
               </div>
             </div>
           </div>
@@ -83,7 +146,7 @@ const DetailJobPage = async ({ params }: { params: { id: string } }) => {
             <div
               className="text-muted-foreground"
               dangerouslySetInnerHTML={{
-                __html: data?.description!! || "",
+                __html: data?.description!!,
               }}
             ></div>
           </div>
@@ -92,7 +155,7 @@ const DetailJobPage = async ({ params }: { params: { id: string } }) => {
             <div
               className="text-muted-foreground"
               dangerouslySetInnerHTML={{
-                __html: data?.responsibility!! || "",
+                __html: data?.responsibility!!,
               }}
             ></div>
           </div>
@@ -102,7 +165,7 @@ const DetailJobPage = async ({ params }: { params: { id: string } }) => {
             <div
               className="text-muted-foreground"
               dangerouslySetInnerHTML={{
-                __html: data?.whoYouAre!! || "",
+                __html: data?.whoYouAre!!,
               }}
             ></div>
           </div>
@@ -112,7 +175,7 @@ const DetailJobPage = async ({ params }: { params: { id: string } }) => {
             <div
               className="text-muted-foreground"
               dangerouslySetInnerHTML={{
-                __html: data?.niceToHaves!! || "",
+                __html: data?.niceToHaves!!,
               }}
             ></div>
           </div>
