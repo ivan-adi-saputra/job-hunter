@@ -16,7 +16,10 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import LatestJobs from "@/components/organisms/LatestJobs";
+import prisma from "../../../../../../lib/prisma";
+import { supabasePublicUrl } from "@/lib/supabase";
 import { dateFormat } from "@/lib/utils";
+import { CompanyTeam } from "@prisma/client";
 
 type params = {
   id: string;
@@ -26,8 +29,40 @@ interface DetailCompanyPageProps {
   params: params;
 }
 
+async function getDetailCompany(id: string) {
+  const data = await prisma.company.findFirst({
+    where: { id },
+    include: {
+      Companyoverview: true,
+      CompanySocialMedia: true,
+      CompanyTeam: true,
+      _count: {
+        select: {
+          Job: true,
+        },
+      },
+    },
+  });
+
+  let imageUrl;
+
+  if (data?.Companyoverview[0].image) {
+    imageUrl = await supabasePublicUrl(
+      data.Companyoverview[0].image,
+      "company"
+    );
+  } else {
+    imageUrl = "/images/company2.png";
+  }
+
+  return {
+    ...data,
+    imageUrl,
+  };
+}
+
 const DetailCompanyPage: FC<DetailCompanyPageProps> = async ({ params }) => {
-  const data: any = [];
+  const data = await getDetailCompany(params.id);
 
   return (
     <>
@@ -194,7 +229,7 @@ const DetailCompanyPage: FC<DetailCompanyPageProps> = async ({ params }) => {
               <div className="my-16">
                 <div className="text-3xl font-semibold mb-4">Teams</div>
                 <div className="grid grid-cols-5 gap-5 mt-5">
-                  {data.CompanyTeam.map((data: any) => (
+                  {data.CompanyTeam.map((data: CompanyTeam) => (
                     <div
                       key={data.id}
                       className="border border-border px-3 py-5"
